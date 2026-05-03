@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ПЛИТА</title>
+
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+
+<style>
+body {
+  margin:0;
+  font-family: Arial, sans-serif;
+  background:#f4f4f4;
+  color:#111;
+}
+.container{
+  max-width:500px;
+  margin:auto;
+  padding:16px;
+}
+h1{
+  margin:0 0 10px;
+  letter-spacing:-1px;
+}
+.block{
+  background:#fff;
+  border:2px solid #111;
+  padding:12px;
+  margin-bottom:12px;
+}
+input, select, button{
+  width:100%;
+  box-sizing:border-box;
+  padding:12px;
+  margin-bottom:10px;
+  border:2px solid #111;
+  font-size:16px;
+  border-radius:0;
+}
+button{
+  background:#d71920;
+  color:#fff;
+  font-weight:bold;
+  text-transform:uppercase;
+}
+.result{
+  border:3px solid #111;
+  padding:10px;
+  margin-top:10px;
+  background:#fff;
+}
+.scheme{
+  display:flex;
+  height:70px;
+  margin-top:10px;
+  border:2px solid #111;
+  border-right:0;
+}
+.slab{
+  border-right:2px solid #111;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  font-size:11px;
+  line-height:1.2;
+  overflow:hidden;
+}
+.monolith{
+  background:#d71920;
+  color:#fff;
+  border-right:2px solid #111;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  font-size:11px;
+  line-height:1.2;
+  overflow:hidden;
+}
+.spec{
+  margin-top:10px;
+  font-size:13px;
+  line-height:1.45;
+}
+.footer{
+  margin-top:10px;
+  font-size:11px;
+  color:#555;
+  border-top:1px solid #999;
+  padding-top:6px;
+}
+.note{
+  font-size:12px;
+  color:#555;
+  line-height:1.35;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<h1>ПЛИТА</h1>
+<div class="note">Эскизная раскладка пустотных железобетонных плит ПК по ширине участка.</div>
+<br>
+
+<div class="block">
+<label>Ширина участка между стенами, мм</label>
+<input id="width" inputmode="numeric" placeholder="Ширина, мм" value="6480">
+
+<label>Длина плиты ПК, мм</label>
+<select id="length">
+<option>2400</option>
+<option>2700</option>
+<option>3000</option>
+<option>3300</option>
+<option>3600</option>
+<option>3900</option>
+<option>4200</option>
+<option>4500</option>
+<option>4800</option>
+<option>5100</option>
+<option>5400</option>
+<option>5700</option>
+<option selected>6000</option>
+<option>6300</option>
+<option>6600</option>
+<option>7200</option>
+</select>
+
+<button onclick="calc()">Подобрать</button>
+<div class="note">Раскладка предварительная. Не является конструктивным расчётом и требует проверки конструктором.</div>
+</div>
+
+<div id="output"></div>
+
+<button onclick="saveJPG()">Скачать JPG</button>
+
+</div>
+
+<script>
+const slabs = [
+  {w:1500,c:"15",p:1},
+  {w:1200,c:"12",p:1},
+  {w:1000,c:"10",p:2},
+  {w:900,c:"9",p:3},
+  {w:1800,c:"18",p:3}
+];
+
+function mark(len, s){
+  return "ПК " + Math.round(len/100) + "." + s.c + "-8";
+}
+
+function calc(){
+  let W = parseInt(document.getElementById("width").value, 10);
+  let L = parseInt(document.getElementById("length").value, 10);
+
+  if(!W || W <= 0){
+    document.getElementById("output").innerHTML = '<div class="result">Введите ширину участка в миллиметрах.</div>';
+    return;
+  }
+
+  let best = null;
+  let max = Math.ceil(W / 900) + 1;
+
+  for(let a=0; a<=max; a++)
+  for(let b=0; b<=max; b++)
+  for(let c=0; c<=max; c++)
+  for(let d=0; d<=max; d++)
+  for(let e=0; e<=max; e++){
+    let counts = [a,b,c,d,e];
+    let sum = counts.reduce((acc,n,i)=>acc+n*slabs[i].w,0);
+    if(sum <= 0 || sum > W) continue;
+
+    let mono = W - sum;
+    let slabCount = counts.reduce((acc,n)=>acc+n,0);
+    let typeCount = counts.filter(Boolean).length;
+    let rarity = counts.reduce((acc,n,i)=>acc+n*slabs[i].p,0);
+
+    let v = {counts,sum,mono,slabCount,typeCount,rarity};
+
+    if(!best ||
+      v.mono < best.mono ||
+      (v.mono === best.mono && v.rarity < best.rarity) ||
+      (v.mono === best.mono && v.rarity === best.rarity && v.typeCount < best.typeCount) ||
+      (v.mono === best.mono && v.rarity === best.rarity && v.typeCount === best.typeCount && v.slabCount < best.slabCount)
+    ){
+      best = v;
+    }
+  }
+
+  render(best, W, L);
+}
+
+function render(v, W, L){
+  if(!v){
+    document.getElementById("output").innerHTML = '<div class="result">Не удалось подобрать раскладку.</div>';
+    return;
+  }
+
+  let html = '<div class="result" id="export">';
+  html += '<b>Лучший вариант</b><br>';
+  html += 'Ширина участка: '+W+' мм<br>';
+  html += 'Длина плит: '+L+' мм<br>';
+  html += 'Монолит: '+v.mono+' мм<br>';
+
+  html += '<div class="scheme">';
+
+  v.counts.forEach((count, index)=>{
+    let slab = slabs[index];
+    for(let i=0; i<count; i++){
+      html += `<div class="slab" style="width:${slab.w/W*100}%">${mark(L, slab)}<br>${slab.w}</div>`;
+    }
+  });
+
+  if(v.mono > 0){
+    html += `<div class="monolith" style="width:${v.mono/W*100}%">Монолит<br>${v.mono}</div>`;
+  }
+
+  html += '</div>';
+
+  html += '<div class="spec"><b>Спецификация</b><br>';
+  v.counts.forEach((count, index)=>{
+    if(count){
+      html += mark(L, slabs[index])+' — '+count+' шт<br>';
+    }
+  });
+  if(v.mono) html += 'Монолитный участок — '+v.mono+' мм<br>';
+  html += '</div>';
+
+  html += '<div class="footer">Эскизная раскладка плит ПК<br>Автор приложения: Ирина Матвеева</div>';
+  html += '</div>';
+
+  document.getElementById("output").innerHTML = html;
+}
+
+function saveJPG(){
+  let el = document.getElementById("export");
+  if(!el){
+    alert("Сначала нажмите «Подобрать».");
+    return;
+  }
+
+  html2canvas(el, {scale:2, backgroundColor:'#ffffff'}).then(canvas=>{
+    let link = document.createElement("a");
+    link.download = "plita.jpg";
+    link.href = canvas.toDataURL("image/jpeg", 0.95);
+    link.click();
+  });
+}
+
+calc();
+</script>
+
+</body>
+</html>
