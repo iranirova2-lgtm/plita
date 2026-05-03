@@ -3,127 +3,145 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ПЛИТА</title>
 
 <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 
 <style>
-body {
+*{
+  box-sizing:border-box;
+}
+
+body{
   margin:0;
-  font-family: Arial, sans-serif;
-  background:#f4f4f4;
+  font-family:Arial, Helvetica, sans-serif;
+  background:#f3f3f3;
   color:#111;
 }
-.container{
-  max-width:500px;
+
+.wrap{
+  max-width:520px;
   margin:auto;
-  padding:16px;
+  padding:20px;
 }
-h1{
-  margin:0 0 10px;
+
+.title{
+  font-size:36px;
+  font-weight:900;
+  margin-bottom:5px;
   letter-spacing:-1px;
 }
+
+.subtitle{
+  font-size:13px;
+  color:#555;
+  margin-bottom:15px;
+}
+
 .block{
   background:#fff;
-  border:2px solid #111;
+  border:3px solid #111;
   padding:12px;
-  margin-bottom:12px;
+  margin-bottom:15px;
+  overflow:hidden;
 }
-input, select, button{
+
+input,select,button{
   width:100%;
-  box-sizing:border-box;
   padding:12px;
   margin-bottom:10px;
   border:2px solid #111;
   font-size:16px;
-  border-radius:0;
+  box-sizing:border-box;
 }
+
 button{
   background:#d71920;
   color:#fff;
   font-weight:bold;
-  text-transform:uppercase;
+  cursor:pointer;
 }
+
 .result{
   border:3px solid #111;
   padding:10px;
-  margin-top:10px;
+  margin-bottom:12px;
   background:#fff;
+  overflow:hidden;
 }
+
+.best{
+  border:5px solid #d71920;
+}
+
+.tag{
+  font-size:12px;
+  font-weight:bold;
+  margin-bottom:5px;
+}
+
 .scheme{
   display:flex;
+  width:100%;
   height:70px;
   margin-top:10px;
-  border:2px solid #111;
-  border-right:0;
+  overflow:hidden;
 }
+
 .slab{
   border-right:2px solid #111;
   display:flex;
   align-items:center;
   justify-content:center;
-  text-align:center;
   font-size:11px;
-  line-height:1.2;
+  line-height:1.15;
+  text-align:center;
   overflow:hidden;
+  word-break:break-word;
+  padding:2px;
 }
+
 .monolith{
   background:#d71920;
   color:#fff;
-  border-right:2px solid #111;
   display:flex;
   align-items:center;
   justify-content:center;
-  text-align:center;
   font-size:11px;
-  line-height:1.2;
+  text-align:center;
   overflow:hidden;
+  padding:2px;
 }
+
 .spec{
   margin-top:10px;
   font-size:13px;
-  line-height:1.45;
+  line-height:1.35;
 }
+
 .footer{
   margin-top:10px;
   font-size:11px;
   color:#555;
-  border-top:1px solid #999;
-  padding-top:6px;
-}
-.note{
-  font-size:12px;
-  color:#555;
-  line-height:1.35;
 }
 </style>
 </head>
 
 <body>
-<div class="container">
 
-<h1>ПЛИТА</h1>
-<div class="note">Эскизная раскладка пустотных железобетонных плит ПК по ширине участка.</div>
-<br>
+<div class="wrap">
+
+<div class="title">ПЛИТА</div>
+<div class="subtitle">Эскизная раскладка плит ПК</div>
 
 <div class="block">
-<label>Ширина участка между стенами, мм</label>
-<input id="width" inputmode="numeric" placeholder="Ширина, мм" value="6480">
+<input id="width" placeholder="Ширина, мм" value="6480">
 
-<label>Длина плиты ПК, мм</label>
 <select id="length">
-<option>2400</option>
-<option>2700</option>
 <option>3000</option>
-<option>3300</option>
 <option>3600</option>
-<option>3900</option>
 <option>4200</option>
-<option>4500</option>
 <option>4800</option>
-<option>5100</option>
 <option>5400</option>
-<option>5700</option>
 <option selected>6000</option>
 <option>6300</option>
 <option>6600</option>
@@ -131,127 +149,125 @@ button{
 </select>
 
 <button onclick="calc()">Подобрать</button>
-<div class="note">Раскладка предварительная. Не является конструктивным расчётом и требует проверки конструктором.</div>
+<button onclick="saveJPG()">Скачать JPG (лучший)</button>
 </div>
 
 <div id="output"></div>
 
-<button onclick="saveJPG()">Скачать JPG</button>
-
 </div>
 
 <script>
-const slabs = [
-  {w:1500,c:"15",p:1},
-  {w:1200,c:"12",p:1},
-  {w:1000,c:"10",p:2},
-  {w:900,c:"9",p:3},
-  {w:1800,c:"18",p:3}
+
+const slabs=[
+{w:1500,c:"15",p:1},
+{w:1200,c:"12",p:1},
+{w:1000,c:"10",p:2}
 ];
 
-function mark(len, s){
-  return "ПК " + Math.round(len/100) + "." + s.c + "-8";
+function mark(len,s){
+return "ПК "+(len/100)+"."+s.c+"-8";
 }
 
 function calc(){
-  let W = parseInt(document.getElementById("width").value, 10);
-  let L = parseInt(document.getElementById("length").value, 10);
 
-  if(!W || W <= 0){
-    document.getElementById("output").innerHTML = '<div class="result">Введите ширину участка в миллиметрах.</div>';
-    return;
-  }
+let W=parseInt(document.getElementById("width").value);
+let L=parseInt(document.getElementById("length").value);
 
-  let best = null;
-  let max = Math.ceil(W / 900) + 1;
+let variants=[];
 
-  for(let a=0; a<=max; a++)
-  for(let b=0; b<=max; b++)
-  for(let c=0; c<=max; c++)
-  for(let d=0; d<=max; d++)
-  for(let e=0; e<=max; e++){
-    let counts = [a,b,c,d,e];
-    let sum = counts.reduce((acc,n,i)=>acc+n*slabs[i].w,0);
-    if(sum <= 0 || sum > W) continue;
+for(let a=0;a<10;a++)
+for(let b=0;b<10;b++)
+for(let c=0;c<10;c++){
 
-    let mono = W - sum;
-    let slabCount = counts.reduce((acc,n)=>acc+n,0);
-    let typeCount = counts.filter(Boolean).length;
-    let rarity = counts.reduce((acc,n,i)=>acc+n*slabs[i].p,0);
+let sum=a*1500+b*1200+c*1000;
+if(sum<=W && sum>0){
 
-    let v = {counts,sum,mono,slabCount,typeCount,rarity};
+let mono=W-sum;
+let count=a+b+c;
+let types=[a,b,c].filter(x=>x>0).length;
+let rarity=a*1 + b*1 + c*2;
 
-    if(!best ||
-      v.mono < best.mono ||
-      (v.mono === best.mono && v.rarity < best.rarity) ||
-      (v.mono === best.mono && v.rarity === best.rarity && v.typeCount < best.typeCount) ||
-      (v.mono === best.mono && v.rarity === best.rarity && v.typeCount === best.typeCount && v.slabCount < best.slabCount)
-    ){
-      best = v;
-    }
-  }
-
-  render(best, W, L);
+variants.push({a,b,c,sum,mono,count,types,rarity});
+}
 }
 
-function render(v, W, L){
-  if(!v){
-    document.getElementById("output").innerHTML = '<div class="result">Не удалось подобрать раскладку.</div>';
-    return;
-  }
+variants.sort((x,y)=>
+x.mono-y.mono ||
+x.rarity-y.rarity ||
+x.types-y.types ||
+x.count-y.count
+);
 
-  let html = '<div class="result" id="export">';
-  html += '<b>Лучший вариант</b><br>';
-  html += 'Ширина участка: '+W+' мм<br>';
-  html += 'Длина плит: '+L+' мм<br>';
-  html += 'Монолит: '+v.mono+' мм<br>';
+let best=variants[0];
+let simple=[...variants].sort((a,b)=>a.types-b.types || a.mono-b.mono)[0];
 
-  html += '<div class="scheme">';
+render([best,simple],W,L);
 
-  v.counts.forEach((count, index)=>{
-    let slab = slabs[index];
-    for(let i=0; i<count; i++){
-      html += `<div class="slab" style="width:${slab.w/W*100}%">${mark(L, slab)}<br>${slab.w}</div>`;
-    }
-  });
+}
 
-  if(v.mono > 0){
-    html += `<div class="monolith" style="width:${v.mono/W*100}%">Монолит<br>${v.mono}</div>`;
-  }
+function render(list,W,L){
 
-  html += '</div>';
+let html='';
+const names=["ЛУЧШИЙ","ПРОСТОЙ"];
 
-  html += '<div class="spec"><b>Спецификация</b><br>';
-  v.counts.forEach((count, index)=>{
-    if(count){
-      html += mark(L, slabs[index])+' — '+count+' шт<br>';
-    }
-  });
-  if(v.mono) html += 'Монолитный участок — '+v.mono+' мм<br>';
-  html += '</div>';
+list.forEach((v,i)=>{
 
-  html += '<div class="footer">Эскизная раскладка плит ПК<br>Автор приложения: Ирина Матвеева</div>';
-  html += '</div>';
+html+=`<div class="result ${i==0?'best':''}" ${i==0?'id="export"':''}>`;
 
-  document.getElementById("output").innerHTML = html;
+html+=`<div class="tag">${names[i]}</div>`;
+html+=`Монолит: ${v.mono} мм<br>`;
+
+html+='<div class="scheme">';
+
+let add=(count,slab)=>{
+for(let j=0;j<count;j++){
+html+=`<div class="slab" style="width:${slab.w/W*100}%">
+${mark(L,slab)}<br>${slab.w}
+</div>`;
+}
+}
+
+add(v.a,slabs[0]);
+add(v.b,slabs[1]);
+add(v.c,slabs[2]);
+
+if(v.mono>0){
+html+=`<div class="monolith" style="width:${v.mono/W*100}%">
+${v.mono}
+</div>`;
+}
+
+html+='</div>';
+
+html+='<div class="spec">';
+if(v.a) html+=mark(L,slabs[0])+' — '+v.a+' шт<br>';
+if(v.b) html+=mark(L,slabs[1])+' — '+v.b+' шт<br>';
+if(v.c) html+=mark(L,slabs[2])+' — '+v.c+' шт<br>';
+html+='</div>';
+
+html+='<div class="footer">Автор: Ирина Матвеева</div>';
+
+html+='</div>';
+
+});
+
+document.getElementById("output").innerHTML=html;
+
 }
 
 function saveJPG(){
-  let el = document.getElementById("export");
-  if(!el){
-    alert("Сначала нажмите «Подобрать».");
-    return;
-  }
+let el=document.getElementById("export");
 
-  html2canvas(el, {scale:2, backgroundColor:'#ffffff'}).then(canvas=>{
-    let link = document.createElement("a");
-    link.download = "plita.jpg";
-    link.href = canvas.toDataURL("image/jpeg", 0.95);
-    link.click();
-  });
+html2canvas(el,{scale:2}).then(canvas=>{
+let link=document.createElement("a");
+link.download="plita.jpg";
+link.href=canvas.toDataURL("image/jpeg",0.95);
+link.click();
+});
 }
 
 calc();
+
 </script>
 
 </body>
